@@ -9,13 +9,37 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('events', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
-    }
+public function up(): void
+{
+    Schema::create('events', function (Blueprint $table) {
+
+        $table->id();
+
+        $table->string('title');
+
+        $table->text('description');
+
+        $table->string('location');
+
+        $table->dateTime('event_date');
+
+        $table->integer('vacancies');
+
+        $table->integer('available_vacancies');
+
+        $table->enum('status', [
+            'pending',
+            'approved',
+            'cancelled'
+        ])->default('pending');
+
+        $table->foreignId('organizer_id')
+            ->constrained('users')
+            ->cascadeOnDelete();
+
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.
