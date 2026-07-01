@@ -22,11 +22,11 @@ class EventService
                 ->paginate(15);
         }
 
-        if ($user->role === UserRole::Admin) {
+        if ($user->isAdmin()) {
             return $query->latest('event_date')->paginate(15);
         }
 
-        if ($user->role === UserRole::Organizer) {
+        if ($user->isOrganizer()) {
             return $query
                 ->where(function ($q) use ($user) {
                     $q->where('organizer_id', $user->id)

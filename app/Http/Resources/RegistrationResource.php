@@ -13,6 +13,7 @@ class RegistrationResource extends JsonResource
             'id' => $this->id,
             'status' => $this->status->value,
             'user' => new UserResource($this->whenLoaded('user')),
+            'event' => new EventResource($this->whenLoaded('event')),
             'event_id' => $this->event_id,
             'created_at' => $this->created_at?->toISOString(),
         ];

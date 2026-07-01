@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CancelRegistrationRequest;
 use App\Http\Requests\RegisterEventRequest;
+use App\Http\Requests\UpdateRegistrationStatusRequest;
 use App\Http\Resources\RegistrationResource;
 use App\Models\Event;
+use App\Models\Registration;
 use App\Services\RegistrationService;
 use Illuminate\Http\JsonResponse;
 
@@ -22,9 +24,30 @@ class RegistrationController extends Controller
 
         return $this->success(
             new RegistrationResource($registration),
-            'Registration completed successfully',
+            'Registration request submitted successfully',
             201
         );
+    }
+
+    public function approve(UpdateRegistrationStatusRequest $request, Registration $registration): JsonResponse
+    {
+        $registration = $this->registrationService->approve($registration);
+
+        return $this->success(new RegistrationResource($registration), 'Registration approved successfully');
+    }
+
+    public function reject(UpdateRegistrationStatusRequest $request, Registration $registration): JsonResponse
+    {
+        $registration = $this->registrationService->reject($registration);
+
+        return $this->success(new RegistrationResource($registration), 'Registration rejected successfully');
+    }
+
+    public function myRegistrations(): JsonResponse
+    {
+        $registrations = $this->registrationService->listForUser(request()->user());
+
+        return $this->success(RegistrationResource::collection($registrations));
     }
 
     public function destroy(CancelRegistrationRequest $request, Event $event): JsonResponse

@@ -3,49 +3,55 @@ services:
   app:
     build: .
     container_name: unieventos-app
-
     working_dir: /var/www
-
     volumes:
       - .:/var/www
-
     ports:
       - "8000:8000"
-
     depends_on:
       - mysql
+    command: sh -c "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+
+  # Novo serviço do Frontend adicionado abaixo:
+  frontend:
+    image: node:20-alpine
+    container_name: unieventos-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Evita que o node_modules local sobrescreva o do container
+    ports:
+      - "5173:5173"
+    # Entra na pasta do front, instala as dependências se necessário e roda o Vite expondo o host
+    command: sh -c "npm install && npm run dev -- --host"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_PROXY_TARGET=http://app:8000
+    depends_on:
+      - app
 
   mysql:
     image: mysql:8.0
-
     container_name: unieventos-mysql
-
     restart: unless-stopped
-
     environment:
+      with_mysql: 1
       MYSQL_DATABASE: unieventos
       MYSQL_ROOT_PASSWORD: root
-
     ports:
       - "3307:3306"
-
     volumes:
       - mysql_data:/var/lib/mysql
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-
     container_name: unieventos-phpmyadmin
-
     restart: unless-stopped
-
     ports:
       - "8080:80"
-
     environment:
       PMA_HOST: mysql
       MYSQL_ROOT_PASSWORD: root
-
     depends_on:
       - mysql
 

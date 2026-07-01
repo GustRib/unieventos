@@ -87,4 +87,13 @@ class EventPolicy
     {
         return $user->role === UserRole::Participant;
     }
+
+    public function manageRegistration(User $user, Event $event): bool
+    {
+        if ($user->role === UserRole::Admin) {
+            return true;
+        }
+
+        return $user->role === UserRole::Organizer && $event->organizer_id === $user->id;
+    }
 }

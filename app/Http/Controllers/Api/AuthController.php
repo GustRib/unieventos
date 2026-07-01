@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterOrganizerRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +26,23 @@ class AuthController extends Controller
             'user' => new UserResource($result['user']),
             'token' => $result['token'],
         ], 'User registered successfully', 201);
+    }
+
+    public function registerOrganizer(RegisterOrganizerRequest $request): JsonResponse
+    {
+        $result = $this->authService->registerOrganizer($request->validated());
+
+        return $this->success([
+            'user' => new UserResource($result['user']),
+            'token' => $result['token'],
+        ], 'Organizer registered successfully', 201);
+    }
+
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $this->authService->updateProfile($request->user(), $request->validated());
+
+        return $this->success(new UserResource($user), 'Profile updated successfully');
     }
 
     public function login(LoginRequest $request): JsonResponse

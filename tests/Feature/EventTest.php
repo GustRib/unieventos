@@ -25,6 +25,19 @@ class EventTest extends TestCase
         $this->assertCount(1, $response->json('data.events'));
     }
 
+    public function test_admin_can_see_pending_and_approved_events(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $organizer = User::factory()->organizer()->create();
+        Event::factory()->approved()->create(['organizer_id' => $organizer->id]);
+        Event::factory()->pending()->create(['organizer_id' => $organizer->id]);
+
+        $response = $this->actingAs($admin, 'sanctum')->getJson('/api/events');
+
+        $response->assertOk();
+        $this->assertCount(2, $response->json('data.events'));
+    }
+
     public function test_organizer_can_create_event(): void
     {
         $organizer = User::factory()->organizer()->create();

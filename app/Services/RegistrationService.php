@@ -36,23 +36,46 @@ class RegistrationService
             throw new BusinessException('You are already registered for this event.');
         }
 
-        return DB::transaction(function () use ($user, $event) {
-            $event = Event::query()->lockForUpdate()->findOrFail($event->id);
+        return Registration::create([
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+            'status' => RegistrationStatus::Pending,
+        ])->load(['user', 'event']);
+    }
+
+    public function approve(Registration $registration): Registration
+    {
+        return DB::transaction(function () use ($registration) {
+            $registration = Registration::query()->lockForUpdate()->findOrFail($registration->id);
+
+            if ($registration->status !== RegistrationStatus::Pending) {
+                throw new BusinessException('Only pending registrations can be approved.');
+            }
+
+            $event = Event::query()->lockForUpdate()->findOrFail($registration->event_id);
 
             if ($event->available_vacancies <= 0) {
                 throw new BusinessException('No vacancies available for this event.');
             }
 
-            $registration = Registration::create([
-                'user_id' => $user->id,
-                'event_id' => $event->id,
-                'status' => RegistrationStatus::Approved,
-            ]);
-
+            $registration->update(['status' => RegistrationStatus::Approved]);
             $event->decrement('available_vacancies');
 
-            return $registration->load(['user', 'event']);
+            return $registration->fresh(['user', 'event']);
         });
+    }
+
+    public function reject(Registration $registration): Registration
+    {
+        $registration = Registration::query()->findOrFail($registration->id);
+
+        if ($registration->status !== RegistrationStatus::Pending) {
+            throw new BusinessException('Only pending registrations can be rejected.');
+        }
+
+        $registration->update(['status' => RegistrationStatus::Rejected]);
+
+        return $registration->fresh(['user', 'event']);
     }
 
     public function cancel(User $user, Event $event): void
@@ -72,13 +95,17 @@ class RegistrationService
                 throw new BusinessException('Registration not found.');
             }
 
+            $wasApproved = $registration->status === RegistrationStatus::Approved;
+
             $registration->update(['status' => RegistrationStatus::Cancelled]);
 
-            Event::query()
-                ->whereKey($event->id)
-                ->lockForUpdate()
-                ->first()
-                ?->increment('available_vacancies');
+            if ($wasApproved) {
+                Event::query()
+                    ->whereKey($event->id)
+                    ->lockForUpdate()
+                    ->first()
+                    ?->increment('available_vacancies');
+            }
         });
     }
 
@@ -87,6 +114,15 @@ class RegistrationService
         return Registration::query()
             ->with('user')
             ->where('event_id', $event->id)
+            ->latest()
+            ->get();
+    }
+
+    public function listForUser(User $user): Collection
+    {
+        return Registration::query()
+            ->with('event.organizer')
+            ->where('user_id', $user->id)
             ->latest()
             ->get();
     }

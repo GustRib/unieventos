@@ -19,7 +19,9 @@ class EventController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $events = $this->eventService->listForUser($request->user());
+        $user = $request->user('sanctum');
+
+        $events = $this->eventService->listForUser($user);
 
         return $this->success([
             'events' => EventResource::collection($events->items()),
@@ -34,7 +36,7 @@ class EventController extends Controller
 
     public function show(Request $request, Event $event): JsonResponse
     {
-        $this->authorize('view', $event);
+        $this->authorizeForUser($request->user('sanctum'), 'view', $event);
 
         $event->load('organizer');
 

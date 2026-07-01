@@ -10,11 +10,33 @@ class AuthService
 {
     public function register(array $data): array
     {
+        return $this->createUser($data, UserRole::Participant);
+    }
+
+    public function registerOrganizer(array $data): array
+    {
+        return $this->createUser([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $data['password'],
+            'department' => $data['department'],
+        ], UserRole::Organizer);
+    }
+
+    public function updateProfile(User $user, array $data): User
+    {
+        $user->update(collect($data)->only(['name', 'course', 'department'])->filter()->all());
+
+        return $user->fresh();
+    }
+
+    private function createUser(array $data, UserRole $role): array
+    {
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => $data['password'],
-            'role' => UserRole::Participant,
+            'role' => $role,
             'course' => $data['course'] ?? null,
             'department' => $data['department'] ?? null,
         ]);
