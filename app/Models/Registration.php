@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\RegistrationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Registration extends Model
 {
@@ -12,16 +14,31 @@ class Registration extends Model
     protected $fillable = [
         'user_id',
         'event_id',
-        'status'
+        'status',
     ];
 
-    public function user()
+    protected function casts(): array
+    {
+        return [
+            'status' => RegistrationStatus::class,
+        ];
+    }
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function event()
+    public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    public function isActive(): bool
+    {
+        return in_array($this->status, [
+            RegistrationStatus::Pending,
+            RegistrationStatus::Approved,
+        ], true);
     }
 }
